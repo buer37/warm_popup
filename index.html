@@ -1,1 +1,323 @@
-hello world!
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>温馨提示弹窗</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        .tip-window {
+            position: fixed;
+            width: 250px;
+            height: 60px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 500;
+            z-index: 9999;
+            animation: fadeIn 0.3s ease-in;
+            cursor: move;
+            user-select: none;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            line-height: 1;
+            color: #333;
+            display: none;
+        }
+
+        .tip-window:hover .close-btn {
+            display: block;
+        }
+
+        .close-btn:hover {
+            background: rgba(0, 0, 0, 0.4);
+            color: white;
+        }
+
+        #control-panel {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            z-index: 10000;
+            transition: all 0.3s ease;
+        }
+
+        #control-panel.hidden {
+            transform: translateX(-100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #toggleBtn {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 20px;
+            z-index: 10001;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        #toggleBtn:hover {
+            background: #1976D2;
+            transform: scale(1.1);
+        }
+
+        #toggleBtn.panel-visible {
+            transform: translateX(280px);
+        }
+
+        #control-panel button {
+            margin: 5px;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        #control-panel button:hover {
+            background: #45a049;
+        }
+
+        #control-panel button.stop {
+            background: #f44336;
+        }
+
+        #control-panel button.stop:hover {
+            background: #da190b;
+        }
+
+        .info {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <button id="toggleBtn" onclick="togglePanel()">☰</button>
+
+    <div id="control-panel" class="hidden">
+        <div class="info">当前弹窗数量: <span id="count">0</span> / <span id="max">300</span></div>
+        <button id="startBtn" onclick="startPopping()">开始弹窗</button>
+        <button id="stopBtn" class="stop" onclick="stopPopping()">停止弹窗</button>
+        <button onclick="closeAllWindows()">关闭所有</button>
+    </div>
+
+    <script>
+        // 弹窗计数器
+        let windowCount = 0;
+        // 最大弹窗数量
+        const MAX_WINDOWS = 300;
+        // 定时器ID
+        let timerId = null;
+        // 弹窗间隔（毫秒）
+        const INTERVAL = 300;
+
+        // 温馨提示文字数组
+        const tips = [
+            '多喝水哦~', '保持微笑呀', '每天都要元气满满',
+            '记得吃水果', '保持好心情', '好好爱自己', '暴富',
+            '梦想成真', '期待下一次见面', '金榜题名',
+            '顺顺利利', '早点休息', '愿所有烦恼都消失',
+            '别熬夜', '今天过得开心嘛', '天冷了，多穿衣服'
+        ];
+
+        // 背景颜色数组
+        const bgColors = [
+            'lightpink', 'skyblue', 'lightgreen', 'lavender',
+            'lightyellow', 'plum', 'coral', 'bisque', 'aquamarine',
+            'mistyrose', 'honeydew', 'lavenderblush', 'oldlace'
+        ];
+
+        // 创建一个温馨提示弹窗
+        function createWarmTip() {
+            // 获取屏幕宽高
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+
+            // 窗口尺寸
+            const windowWidth = 250;
+            const windowHeight = 60;
+
+            // 随机位置（确保完全显示）
+            const x = Math.floor(Math.random() * (screenWidth - windowWidth));
+            const y = Math.floor(Math.random() * (screenHeight - windowHeight));
+
+            // 随机选择提示文字和背景颜色
+            const tip = tips[Math.floor(Math.random() * tips.length)];
+            const bgColor = bgColors[Math.floor(Math.random() * bgColors.length)];
+
+            // 创建弹窗元素
+            const tipWindow = document.createElement('div');
+            tipWindow.className = 'tip-window';
+            tipWindow.style.left = x + 'px';
+            tipWindow.style.top = y + 'px';
+            tipWindow.style.backgroundColor = bgColor;
+            tipWindow.textContent = tip;
+
+            // 创建关闭按钮
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'close-btn';
+            closeBtn.textContent = '×';
+            closeBtn.onclick = function(e) {
+                e.stopPropagation();
+                tipWindow.remove();
+                windowCount--;
+                updateCount();
+            };
+            tipWindow.appendChild(closeBtn);
+
+            // 添加到页面
+            document.body.appendChild(tipWindow);
+
+            // 弹窗数量+1
+            windowCount++;
+            updateCount();
+
+            // 添加拖拽功能
+            makeDraggable(tipWindow);
+        }
+
+        // 使元素可拖拽
+        function makeDraggable(element) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            
+            element.onmousedown = dragMouseDown;
+
+            function dragMouseDown(e) {
+                e.preventDefault();
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                document.onmouseup = closeDragElement;
+                document.onmousemove = elementDrag;
+            }
+
+            function elementDrag(e) {
+                e.preventDefault();
+                pos1 = pos3 - e.clientX;
+                pos2 = pos4 - e.clientY;
+                pos3 = e.clientX;
+                pos4 = e.clientY;
+                element.style.top = (element.offsetTop - pos2) + "px";
+                element.style.left = (element.offsetLeft - pos1) + "px";
+            }
+
+            function closeDragElement() {
+                document.onmouseup = null;
+                document.onmousemove = null;
+            }
+        }
+
+        // 自动弹出提示
+        function autoPopTips() {
+            if (windowCount < MAX_WINDOWS) {
+                createWarmTip();
+                timerId = setTimeout(autoPopTips, INTERVAL);
+            } else {
+                console.log(`已达到最大弹窗数量（${MAX_WINDOWS}个），自动暂停`);
+                stopPopping();
+            }
+        }
+
+        // 开始弹窗
+        function startPopping() {
+            if (timerId === null && windowCount < MAX_WINDOWS) {
+                autoPopTips();
+                document.getElementById('startBtn').disabled = true;
+            }
+        }
+
+        // 停止弹窗
+        function stopPopping() {
+            if (timerId !== null) {
+                clearTimeout(timerId);
+                timerId = null;
+                document.getElementById('startBtn').disabled = false;
+            }
+        }
+
+        // 关闭所有弹窗
+        function closeAllWindows() {
+            const windows = document.querySelectorAll('.tip-window');
+            windows.forEach(window => window.remove());
+            windowCount = 0;
+            updateCount();
+            stopPopping();
+        }
+
+        // 更新计数显示
+        function updateCount() {
+            document.getElementById('count').textContent = windowCount;
+        }
+
+        // 切换控制面板显示/隐藏
+        function togglePanel() {
+            const panel = document.getElementById('control-panel');
+            const toggleBtn = document.getElementById('toggleBtn');
+
+            panel.classList.toggle('hidden');
+            toggleBtn.classList.toggle('panel-visible');
+
+            // 切换按钮图标
+            if (panel.classList.contains('hidden')) {
+                toggleBtn.textContent = '☰';
+            } else {
+                toggleBtn.textContent = '×';
+            }
+        }
+
+        // 页面加载完成后自动开始
+        window.onload = function() {
+            updateCount();
+            // 自动开始弹窗（如果不想自动开始，可以注释掉下面这行）
+            startPopping();
+        };
+    </script>
+</body>
+</html>
